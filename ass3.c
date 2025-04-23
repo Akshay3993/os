@@ -25,16 +25,24 @@ int main() {
 
     if (pid == 0) {
         // Child process: sort
-        dup2(fd[1], STDOUT_FILENO); // write to pipe
-        close(fd[0]); // not needed
+        dup2(fd[1], STDOUT_FILENO);
+        close(fd[0]);
         close(fd[1]);
         execl("/usr/bin/sort", "sort", NULL);
     }
     else if (pid > 0) {
         // Parent process: uniq
-        dup2(fd[0], STDIN_FILENO); // read from pipe
-        close(fd[1]); // not needed
+        int outfile = open("output.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        if (outfile < 0) {
+            perror("output file open");
+            exit(1);
+        }
+
+        dup2(fd[0], STDIN_FILENO);
+        dup2(outfile, STDOUT_FILENO);
+        close(fd[1]);
         close(fd[0]);
+        close(outfile);
         execl("/usr/bin/uniq", "uniq", NULL);
     }
     else {
